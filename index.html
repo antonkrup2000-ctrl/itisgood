@@ -1,75 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rammerhead Proxy</title>
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" 
-      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" 
-      crossorigin="anonymous">
-<style>
-  body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #1e1e2f; color: white; }
-  header { text-align: center; margin-bottom: 30px; }
-  header h1 { font-weight: bold; }
-  #proxy-frame { width: 100%; height: 80vh; border: 2px solid #444; border-radius: 12px; background: black; }
-  .card { background: #2a2a40; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-  .btn-primary { background: #4e79ff; border: none; }
-  .btn-primary:hover { background: #3e65d6; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rammerhead Proxy</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<header>
-  <h1>Rammerhead Proxy</h1>
-  <p>Each session is isolated, like an incognito browser.</p>
+<header class="p-3 bg-primary text-white text-center">
+    <h1>Rammerhead Proxy</h1>
 </header>
 
-<div class="card">
-  <div class="form-group">
-    <label for="session-url">Enter URL</label>
-    <div class="input-group">
-      <input type="text" class="form-control" id="session-url" placeholder="https://www.example.com">
-      <div class="input-group-append">
-        <button class="btn btn-primary" id="session-go">Go!</button>
-      </div>
-    </div>
-  </div>
+<div class="container my-4">
+    <p class="mt-3 mb-3">Join the <a href="https://discord.gg/VNT4E7gN5Y">Discord server</a> for updates or chat.</p>
 
-  <div class="form-group">
-    <label for="session-id">Session ID</label>
-    <input type="text" readonly class="form-control" id="session-id" placeholder="Your session ID will appear here">
-    <button class="btn btn-secondary mt-2" id="session-create-btn">Create New Session ID</button>
-  </div>
+    <div class="form-group">
+        <label for="session-url">Enter URL</label>
+        <input type="text" class="form-control" id="session-url" placeholder="https://www.google.com/">
+    </div>
+
+    <div class="form-group">
+        <label for="session-id">Session ID</label>
+        <input type="text" class="form-control" id="session-id" placeholder="Click 'Create new session ID'">
+    </div>
+
+    <button class="btn btn-secondary mb-2" id="session-create-btn">Create new session ID</button>
+    <button class="btn btn-success mb-2" id="session-go">Go!</button>
+
+    <div id="error-text" class="text-danger mt-2" style="display: none;"></div>
 </div>
 
-<iframe id="proxy-frame" src=""></iframe>
-
 <script>
-let sessionId = null;
+document.addEventListener('DOMContentLoaded', () => {
+    const sessionCreateBtn = document.getElementById('session-create-btn');
+    const sessionIdInput = document.getElementById('session-id');
+    const sessionGoBtn = document.getElementById('session-go');
+    const sessionUrlInput = document.getElementById('session-url');
+    const errorText = document.getElementById('error-text');
 
-// Function to create a new session ID
-async function createSession() {
-  const res = await fetch('/.netlify/functions/proxy?url=');
-  const data = await res.json();
-  sessionId = data.session;
-  document.getElementById('session-id').value = sessionId;
-}
+    // Generate a new session ID
+    sessionCreateBtn.addEventListener('click', () => {
+        const newSessionId = Math.random().toString(36).substring(2, 10); // 8 chars
+        sessionIdInput.value = newSessionId;
+        localStorage.setItem('currentSessionId', newSessionId);
+        errorText.style.display = 'none';
+    });
 
-// Initialize session on page load
-createSession();
+    // Go button to open Rammerhead proxy
+    sessionGoBtn.addEventListener('click', () => {
+        const url = sessionUrlInput.value.trim();
+        const sessionId = sessionIdInput.value.trim();
 
-document.getElementById('session-create-btn').addEventListener('click', () => {
-  createSession();
-});
+        if (!url || !sessionId) {
+            errorText.textContent = "Please enter both a URL and a session ID.";
+            errorText.style.display = 'block';
+            return;
+        }
 
-// Go button
-document.getElementById('session-go').addEventListener('click', () => {
-  const url = document.getElementById('session-url').value.trim();
-  if (!url) return alert('Enter a URL!');
-  if (!sessionId) return alert('Session not ready. Try again in a second.');
-  document.getElementById('proxy-frame').src = `/.netlify/functions/proxy?url=${encodeURIComponent(url)}&session=${sessionId}`;
+        // Open the proxy page in a new tab/window
+        const proxyUrl = `/.netlify/functions/proxy?url=${encodeURIComponent(url)}&sessionId=${encodeURIComponent(sessionId)}`;
+        window.open(proxyUrl, '_blank');
+    });
 });
 </script>
-
 </body>
 </html>
