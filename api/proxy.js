@@ -1,26 +1,14 @@
-const { createProxyMiddleware } = require('http-proxy-middleware');
+import fetch from "node-fetch";
 
-exports.handler = async function(event, context) {
-  const url = event.queryStringParameters.url;
-  if (!url) {
-    return {
-      statusCode: 400,
-      body: "Missing 'url' query parameter"
-    };
-  }
+export default async function handler(req, res) {
+  const url = req.query.url;
+  if (!url) return res.status(400).send("Missing 'url' query parameter");
 
   try {
-    // Here is where you would forward the request to the target
-    // You cannot do this with client-side iframe, it must be done via function
-    return {
-      statusCode: 200,
-      body: `Proxy would forward request to: ${url}`
-    };
+    const response = await fetch(url);
+    const body = await response.text();
+    res.status(response.status).send(body);
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: `Proxy error: ${err.message}`
-    };
+    res.status(500).send("Proxy error: " + err.message);
   }
-};
-
+}
